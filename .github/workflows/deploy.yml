@@ -1,0 +1,28 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_HOST: 89.111.142.79
+          VPS_USER: deploy
+        run: |
+          echo "$SSH_KEY" > ssh_key
+          chmod 600 ssh_key
+          ssh -o StrictHostKeyChecking=no -i ssh_key $VPS_USER@$VPS_HOST << 'EOF'
+            cd /home/deploy/test-deploy || git clone https://github.com/igor0u/test-deploy.git /home/deploy/test-deploy
+            cd /home/deploy/test-deploy
+            git pull origin main
+            docker compose up -d --build
+          EOF
